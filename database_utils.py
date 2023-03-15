@@ -5,6 +5,8 @@ from sqlalchemy import create_engine, inspect
 import psycopg2
 import os
 
+from data_cleaning import DataCleaning
+from data_extraction import DataExtractor
 
 class DatabaseConnector:
     def __init__(self):
@@ -29,13 +31,24 @@ class DatabaseConnector:
         return table_names
         # Using the engine from init_db_engine() list all the tables in the database so you know whhich tables you can extract data from
 
-    def upload_to_db(self):
-        pass #this method will take in a pd df and a table name to upload to as an argument
+    def upload_to_db(self, data_frame, table_name, db_creds):
+        local_engine = create_engine(f"{db_creds['LOCAL_DATABASE_TYPE']}+{db_creds['LOCAL_DB_API']}://{db_creds['LOCAL_USER']}:{db_creds['LOCAL_PASSWORD']}@{db_creds['LOCAL_HOST']}:{db_creds['Local_HOST_PORT']}/{db_creds['Local_HOST_DATABASE']}")
+        local_engine.connect()
+        data_frame.to_sql(table_name, local_engine, if_exists='replace')
+
+        
 
 
     #Once extracted and cleaned use the upload_to_db method to store the data in your Sales_Data database in a table named dim_users
 
 
 
-instance = DatabaseConnector()
-instance.list_db_tables(instance.init_db_engine(instance.read_db_creds()))
+connector = DatabaseConnector()
+extractor = DataExtractor()
+cleaner = DataCleaning()
+
+db_creds = connector.read_db_creds()
+engine = connector.init_db_engine(db_creds)
+table_names = connector.list_db_tables(engine)
+clean_leagcy_user_data = cleaner.clean_user_data()
+connector.upload_to_db(clean_leagcy_user_data, 'dim_user', db_creds)
