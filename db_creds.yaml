@@ -8,7 +8,7 @@ DB_API: psycopg2
 
 
 Local_HOST: localhost
-Local_PASSWORD: JlP19982019
+Local_PASSWORD: 
 Local_USER: postgres
 Local_DATABASE_TYPE: postgresql
 Local_DATABASE: Sales_Data
