@@ -4,19 +4,17 @@ import numpy as np
 from sqlalchemy import create_engine, inspect
 import psycopg2
 
-from database_utils import DatabaseConnector
 from data_extraction import DataExtractor
+from database_utils import DatabaseConnector
+
 
 
 class DataCleaning:
     def __init__(self):
         pass
 
-    def clean_user_data(self):
-
-        extractor = DataExtractor()
-        legacy_users_table = extractor.read_rds_table('legacy_users')
-
+    def clean_user_data(self, legacy_users_table):
+     
         legacy_users_table.replace('NULL', pd.NaT, inplace=True)
         legacy_users_table  = legacy_users_table.dropna(subset=['date_of_birth', 'email_address', 'user_uuid'], how='any', axis=0, inplace=False)
 
@@ -29,5 +27,21 @@ class DataCleaning:
         legacy_users_table = legacy_users_table.drop_duplicates(subset=['email_address'])
         return legacy_users_table 
 
-instance = DataCleaning()
-legacy_users_table = instance.clean_user_data()
+
+
+
+if __name__ == "__main__":
+    # Creates class instances
+    extractor = DataExtractor()
+    connector = DatabaseConnector()
+    cleaner = DataCleaning()
+
+    db_creds = connector.read_db_creds()
+    engine = connector.init_db_engine(db_creds)
+    table_names = connector.list_db_tables(engine)
+
+    legacy_users_table = extractor.read_rds_table(table_names, 'legacy_users', engine)
+    clean_legacy_users_table = cleaner.clean_user_data(legacy_users_table)
+    connector.upload_to_db(clean_legacy_users_table, "dim_users", db_creds)
+
+
