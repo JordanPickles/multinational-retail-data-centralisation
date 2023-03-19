@@ -32,9 +32,9 @@ class DatabaseConnector:
         # Using the engine from init_db_engine() list all the tables in the database so you know whhich tables you can extract data from
 
     def upload_to_db(self, data_frame, table_name, db_creds):
-        lOCAL_engine = create_engine(f"{db_creds['LOCAL_DATABASE_TYPE']}+{db_creds['LOCAL_DB_API']}://{db_creds['LOCAL_USER']}:{db_creds['LOCAL_PASSWORD']}@{db_creds['LOCAL_HOST']}:{db_creds['LOCAL_PORT']}/{db_creds['LOCAL_DATABASE']}")
-        lOCAL_engine.connect()
-        data_frame.to_sql(table_name, lOCAL_engine, if_exists='replace')
+        local_engine = create_engine(f"{db_creds['LOCAL_DATABASE_TYPE']}+{db_creds['LOCAL_DB_API']}://{db_creds['LOCAL_USER']}:{db_creds['LOCAL_PASSWORD']}@{db_creds['LOCAL_HOST']}:{db_creds['LOCAL_PORT']}/{db_creds['LOCAL_DATABASE']}")
+        local_engine.connect()
+        data_frame.to_sql(table_name, local_engine, if_exists='replace')
 
         
 
