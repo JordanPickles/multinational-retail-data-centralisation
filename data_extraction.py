@@ -46,7 +46,7 @@ class DataExtractor:
             data.append(result)
 
         df = pd.DataFrame(data)
-        print(df.head(10))
+
         return df
     
     def extract_from_s3(self, s3_address):
@@ -68,13 +68,6 @@ class DataExtractor:
         return df
 
  
-
-
-
-
-
-
-
 
 
 extractor = DataExtractor()

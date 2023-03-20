@@ -14,15 +14,12 @@ class DataCleaning:
         pass
 
     def clean_user_data(self, legacy_users_table):
-        
-     
-        legacy_users_table.replace('NULL', pd.NaT, inplace=True)
+        legacy_users_table.replace('NULL', np.NaN, inplace=True)
         legacy_users_table.dropna(subset=['date_of_birth', 'email_address', 'user_uuid'], how='any', axis=0, inplace=True)
 
         legacy_users_table['date_of_birth'] = pd.to_datetime(legacy_users_table['date_of_birth'], errors = 'ignore')
         legacy_users_table['join_date'] = pd.to_datetime(legacy_users_table['join_date'], errors ='coerce')
         legacy_users_table = legacy_users_table.dropna(subset=['join_date'])
-
 
         legacy_users_table['phone_number'] = legacy_users_table['phone_number'].str.replace('/W', '')
         legacy_users_table = legacy_users_table.drop_duplicates(subset=['email_address'])
@@ -32,7 +29,7 @@ class DataCleaning:
         return legacy_users_table 
     
     def clean_card_data(self, card_data_table):
-        card_data_table.replace('NULL', pd.NaT, inplace=True)
+        card_data_table.replace('NULL', np.NaN, inplace=True)
         card_data_table.dropna(subset=['card_number'], how='any', axis=0, inplace=True)
         card_data_table = card_data_table[~card_data_table['card_number'].str.contains('[a-zA-Z?]', na=False)]
         card_data_table.to_csv('outputs.csv')
@@ -40,10 +37,13 @@ class DataCleaning:
     
     def clean_store_data(self, store_data):
         store_data = store_data.reset_index(drop=True)
-        store_data.replace('NULL', pd.NaT, inplace=True)
+        store_data.replace('NULL', np.NaN, inplace=True)
         store_data.loc[[31, 179, 248, 341, 375], 'staff_number'] = [78, 30, 80, 97, 39] # individually replaces values that have been inccorectly including text
-        store_data.dropna(subset=['address'], how='any', axis=0, inplace=True)
-        store_data = store_data[~store_data['staff_number'].str.contains('[a-zA-Z?]', na=False)]
+        
+        store_data['staff_number'] = pd.to_numeric(store_data['staff_number'], errors='coerce')
+        store_data.to_csv('mid_store_data.csv')
+        store_data.dropna(subset=['staff_number'], axis=0, inplace=True)
+
         store_data = store_data.drop('lat', axis = 1)
         store_data['continent'] = store_data['continent'].str.replace('eeEurope', 'Europe').str.replace('eeAmerica', 'America')
 
@@ -72,7 +72,7 @@ class DataCleaning:
 
     def clean_product_data(self, data):
         
-        data.replace('NULL', pd.NaT, inplace=True)
+        data.replace('NULL', np.NaN, inplace=True)
         data['date_added'] = pd.to_datetime(data['date_added'], errors ='coerce')
         data.dropna(subset=['date_added'], how='any', axis=0, inplace=True)
         data['weight'] = data['weight'].apply(lambda x: x.replace(' .', ''))
@@ -97,7 +97,7 @@ class DataCleaning:
         return data
     
     def clean_date_data(self, data):
-        data = data[~data['year'].str.contains('[a-zA-Z?]', na=False)]
+        data['year'] = pd.to_numeric(data['year'], errors='coerce')
         data.dropna(subset=['year'], how='any', axis=0, inplace=True)
         return data
 
@@ -116,11 +116,13 @@ if __name__ == "__main__":
     table_names = connector.list_db_tables(engine)
     legacy_users_table = extractor.read_rds_table(table_names, 'legacy_users', engine)
     clean_legacy_users_table = cleaner.clean_user_data(legacy_users_table)
+    clean_legacy_users_table.to_csv('users.csv')
     connector.upload_to_db(clean_legacy_users_table, "dim_users", db_creds)
 
     #Extracts data from pdf, cleans the data and uploads the df to the db
     card_data_table = extractor.retrieve_pdf_data('https://data-handling-public.s3.eu-west-1.amazonaws.com/card_details.pdf')
     clean_card_data_table = cleaner.clean_card_data(card_data_table)
+    clean_card_data_table.to_csv('card_data.csv')
     connector.upload_to_db(clean_card_data_table, "dim_card_details", db_creds)
 
 
@@ -137,7 +139,6 @@ if __name__ == "__main__":
 
     # Extracts the product data
     product_data = extractor.extract_from_s3('s3://data-handling-public/products.csv')
-    print(type(product_data))
     cleaned_product_data = cleaner.clean_product_data(product_data)
     cleaned_product_data.to_csv('product.csv')
     connector.upload_to_db(cleaned_product_data, 'dim_products', db_creds)
