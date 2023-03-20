@@ -30,7 +30,6 @@ class DataExtractor:
         return df
 
     def list_number_of_stores(self, endpoint, api_key):
-        
         response = requests.get(endpoint, headers=api_key)
         content = response.text
         result = json.loads(content)
@@ -50,13 +49,21 @@ class DataExtractor:
         print(df.head(10))
         return df
     
-    def extract_from_s3(self):
+    def extract_from_s3(self, s3_address):
         s3 = boto3.resource('s3')
-        s3_address = 's3://data-handling-public/products.csv'
-        bucket_name, file_key = s3_address.replace('s3://', '').split('/', 1)
+        if 's3://' in s3_address:
+            s3_address = s3_address.replace('s3://','' )
+        elif 'https' in s3_address:
+            s3_address = s3_address.replace('https://', '')
+
+        bucket_name, file_key = s3_address.split('/', 1)
+        bucket_name = 'data-handling-public'
         obj = s3.Object(bucket_name, file_key)
         body = obj.get()['Body']
-        df = pd.read_csv(body)
+        if 'csv' in file_key:
+            df = pd.read_csv(body)
+        elif '.json' in file_key:
+            df = pd.read_json(body)
         df = df.reset_index(drop=True)
         return df
 
