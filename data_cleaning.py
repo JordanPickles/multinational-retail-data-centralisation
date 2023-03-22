@@ -38,13 +38,10 @@ class DataCleaning:
     def clean_store_data(self, store_data):
         store_data = store_data.reset_index(drop=True)
         store_data.replace('NULL', np.NaN, inplace=True)
-        store_data.loc[[31, 179, 248, 341, 375], 'staff_number'] = [78, 30, 80, 97, 39] # individually replaces values that have been inccorectly including text
-        
-        store_data['staff_number'] = pd.to_numeric(store_data['staff_number'], errors='coerce')
-        store_data.to_csv('mid_store_data.csv')
-        store_data.dropna(subset=['staff_number'], axis=0, inplace=True)
+        store_data.loc[[31, 179, 248, 341, 375], 'staff_numbers'] = [78, 30, 80, 97, 39] # individually replaces values that have been inccorectly including text
+        store_data['staff_numbers'] = pd.to_numeric(store_data['staff_numbers'], errors='coerce')
+        store_data.dropna(subset=['staff_numbers'], axis=0, inplace=True)
 
-        store_data = store_data.drop('lat', axis = 1)
         store_data['continent'] = store_data['continent'].str.replace('eeEurope', 'Europe').str.replace('eeAmerica', 'America')
 
         return store_data
@@ -134,6 +131,7 @@ if __name__ == "__main__":
     store_data = extractor.retrieve_stores_data(number_stores, retrieve_store_endpoint, api_key)
     store_data.to_csv('store_outputs.csv')
     clean_store_data_table = cleaner.clean_store_data(store_data)
+    clean_store_data_table.to_csv('store_outputs.csv')
     connector.upload_to_db(clean_store_data_table, "dim_store_details", db_creds)
 
 
