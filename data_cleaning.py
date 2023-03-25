@@ -32,7 +32,6 @@ class DataCleaning:
         card_data_table.replace('NULL', np.NaN, inplace=True)
         card_data_table.dropna(subset=['card_number'], how='any', axis=0, inplace=True)
         card_data_table = card_data_table[~card_data_table['card_number'].str.contains('[a-zA-Z?]', na=False)]
-        card_data_table.to_csv('outputs.csv')
         return card_data_table
     
     def clean_store_data(self, store_data):
@@ -116,28 +115,29 @@ if __name__ == "__main__":
     db_creds = connector.read_db_creds()
     engine = connector.init_db_engine(db_creds)
     table_names = connector.list_db_tables(engine)
-    # legacy_users_table = extractor.read_rds_table(table_names, 'legacy_users', engine)
-    # clean_legacy_users_table = cleaner.clean_user_data(legacy_users_table)
-    # clean_legacy_users_table.to_csv('users.csv')
-    # connector.upload_to_db(clean_legacy_users_table, "dim_users", db_creds)
+    legacy_users_table = extractor.read_rds_table(table_names, 'legacy_users', engine)
+    clean_legacy_users_table = cleaner.clean_user_data(legacy_users_table)
+    clean_legacy_users_table.to_csv('users.csv')
+    connector.upload_to_db(clean_legacy_users_table, "dim_users", db_creds)
 
-    # #Extracts data from pdf, cleans the data and uploads the df to the db
-    # card_data_table = extractor.retrieve_pdf_data('https://data-handling-public.s3.eu-west-1.amazonaws.com/card_details.pdf')
-    # clean_card_data_table = cleaner.clean_card_data(card_data_table)
-    # clean_card_data_table.to_csv('card_data.csv')
-    # connector.upload_to_db(clean_card_data_table, "dim_card_details", db_creds)
+    #Extracts data from pdf, cleans the data and uploads the df to the db
+    card_data_table = extractor.retrieve_pdf_data('https://data-handling-public.s3.eu-west-1.amazonaws.com/card_details.pdf')
+    card_data_table.to_csv('card_details.csv')
+    clean_card_data_table = cleaner.clean_card_data(card_data_table)
+    clean_card_data_table.to_csv('card_data.csv')
+    connector.upload_to_db(clean_card_data_table, "dim_card_details", db_creds)
 
 
     # Extracts, cleans and uploads store data to db
-    # api_key = {'x-api-key': 'yFBQbwXe9J3sd6zWVAMrK6lcxxr0q1lr2PT6DDMX'}
-    # number_stores_endpoint = 'https://aqj7u5id95.execute-api.eu-west-1.amazonaws.com/prod/number_stores'
-    # retrieve_store_endpoint = 'https://aqj7u5id95.execute-api.eu-west-1.amazonaws.com/prod/store_details/'
-    # number_stores = extractor.list_number_of_stores(number_stores_endpoint, api_key)
-    # store_data = extractor.retrieve_stores_data(number_stores, retrieve_store_endpoint, api_key)
-    # store_data.to_csv('store_outputs.csv')
-    # clean_store_data_table = cleaner.clean_store_data(store_data)
-    # clean_store_data_table.to_csv('store_outputs.csv')
-    # connector.upload_to_db(clean_store_data_table, "dim_store_details", db_creds)
+    api_key = {'x-api-key': 'yFBQbwXe9J3sd6zWVAMrK6lcxxr0q1lr2PT6DDMX'}
+    number_stores_endpoint = 'https://aqj7u5id95.execute-api.eu-west-1.amazonaws.com/prod/number_stores'
+    retrieve_store_endpoint = 'https://aqj7u5id95.execute-api.eu-west-1.amazonaws.com/prod/store_details/'
+    number_stores = extractor.list_number_of_stores(number_stores_endpoint, api_key)
+    store_data = extractor.retrieve_stores_data(number_stores, retrieve_store_endpoint, api_key)
+    store_data.to_csv('store_outputs.csv')
+    clean_store_data_table = cleaner.clean_store_data(store_data)
+    clean_store_data_table.to_csv('store_outputs.csv')
+    connector.upload_to_db(clean_store_data_table, "dim_store_details", db_creds)
 
 
     # Extracts the product data
@@ -147,14 +147,14 @@ if __name__ == "__main__":
     connector.upload_to_db(cleaned_product_data, 'dim_products', db_creds)
 
     # Order table data
-    # orders_table = extractor.read_rds_table(table_names, 'orders_table', engine)
-    # clean_orders_table = cleaner.clean_order_data(orders_table)
-    # clean_orders_table.to_csv('orders.csv')
-    # connector.upload_to_db(clean_orders_table, "orders_table", db_creds)
+    orders_table = extractor.read_rds_table(table_names, 'orders_table', engine)
+    clean_orders_table = cleaner.clean_order_data(orders_table)
+    clean_orders_table.to_csv('orders.csv')
+    connector.upload_to_db(clean_orders_table, "orders_table", db_creds)
 
-    # #Date data
-    # date_data = extractor.extract_from_s3('https://data-handling-public.s3.eu-west-1.amazonaws.com/date_details.json')
-    # clean_date_data = cleaner.clean_date_data(date_data)
-    # clean_date_data.to_csv('date.csv')
-    # connector.upload_to_db(clean_date_data, "dim_date_times", db_creds)
+    #Date data
+    date_data = extractor.extract_from_s3('https://data-handling-public.s3.eu-west-1.amazonaws.com/date_details.json')
+    clean_date_data = cleaner.clean_date_data(date_data)
+    clean_date_data.to_csv('date.csv')
+    connector.upload_to_db(clean_date_data, "dim_date_times", db_creds)
 
