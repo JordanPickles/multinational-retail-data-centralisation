@@ -2,12 +2,14 @@
 
 
 -- How many stores does the business have and in wich countires?
+-- The Operations team would like to know which countries we currently operate in and which country now has the most stores.
 
 SELECT country_code, COUNT(country_code) as total_no_stores
 FROM dim_store_details
 GROUP BY country_code
 ORDER BY total_no_stores desc;
 
+-- Which locations currently have the most stores?
 -- The business stakeholders would like to know which locations currently have the most stores.
 
 SELECT locality, count(locality) as total_no_stores
@@ -94,6 +96,7 @@ GROUP BY dim_store_details.store_type;
 -- How quickly is the company making sales?
 -- Sales would like to get an accurate metric for how quickly the compnay is making sales.
 -- Determine the average time take between each sale grouped by year.
+
 with time_table(hour, minutes, seconds, day, month, year, date_uuid) as (
 	SELECT 
 		EXTRACT(hour from CAST(timestamp as time)) as hour,
@@ -106,17 +109,17 @@ with time_table(hour, minutes, seconds, day, month, year, date_uuid) as (
 	FROM dim_date_times),
 	
 	timestamp_table(timestamp, date_uuid, year) as (
-	SELECT MAKE_TIMESTAMP(CAST(time_table.year as int), CAST(time_table.month as int),
-						  CAST(time_table.day as int), CAST(time_table.hour as int),	
-						  CAST(time_table.minutes as int), CAST(time_table.seconds as float)) as order_timestamp,
-		time_table.date_uuid as date_uuid, 
-		time_table.year as year
-	FROM time_table),
+		SELECT MAKE_TIMESTAMP(CAST(time_table.year as int), CAST(time_table.month as int),
+							  CAST(time_table.day as int), CAST(time_table.hour as int),	
+							  CAST(time_table.minutes as int), CAST(time_table.seconds as float)) as order_timestamp,
+			time_table.date_uuid as date_uuid, 
+			time_table.year as year
+		FROM time_table),
 	
 	time_stamp_diffs(year, time_diff) as (
-	SELECT timestamp_table.year, timestamp_table.timestamp - LAG(timestamp_table.timestamp) OVER (ORDER BY timestamp_table.timestamp asc) as time_diff
-	FROM orders_table
-	JOIN timestamp_table ON orders_table.date_uuid = timestamp_table.date_uuid),
+		SELECT timestamp_table.year, timestamp_table.timestamp - LAG(timestamp_table.timestamp) OVER (ORDER BY timestamp_table.timestamp asc) as time_diff
+		FROM orders_table
+		JOIN timestamp_table ON orders_table.date_uuid = timestamp_table.date_uuid),
 
 	year_time_diffs(year, average_time_diff) as (
 		SELECT year, AVG(time_diff) as average_time_diff
@@ -124,11 +127,12 @@ with time_table(hour, minutes, seconds, day, month, year, date_uuid) as (
 		GROUP BY year
 		ORDER BY average_time_diff desc)
 		
-SELECT year, CONCAT('hours: ', EXTRACT(HOUR FROM average_time_diff),
+SELECT 
+	year, 
+	CONCAT('hours: ', EXTRACT(HOUR FROM average_time_diff),
 					'  minutes: ', EXTRACT(MINUTE FROM average_time_diff),
 				   '  seconds: ', CAST(EXTRACT(SECOND FROM average_time_diff) as int),
 				   '  milliseconds: ', CAST(EXTRACT(MILLISECOND FROM average_time_diff) as int))
-					
 FROM year_time_diffs;
 	
 
